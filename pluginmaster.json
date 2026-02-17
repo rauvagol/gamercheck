@@ -5,7 +5,7 @@
     "Punchline": "View FFLogs links for your party.",
     "Description": "Checks if your party members are gamers.",
     "InternalName": "GamerCheck",
-    "AssemblyVersion": "0.0.0.3",
+    "AssemblyVersion": "0.0.0.4",
     "RepoUrl": "https://github.com/rauvagol/gamercheck",
     "ApplicableVersion": "any",
     "Tags": ["party", "fflogs", "parse"],
