@@ -17,7 +17,7 @@ public class ConfigWindow : Window, IDisposable
     {
         Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse;
-        Size = new Vector2(460, 300);
+        Size = new Vector2(460, 340);
         SizeCondition = ImGuiCond.Always;
         _configuration = plugin.Configuration;
     }
@@ -55,7 +55,8 @@ public class ConfigWindow : Window, IDisposable
         ImGui.PopStyleColor();
         ImGui.SameLine();
         ImGui.Text(" (click to open).");
-        ImGui.TextWrapped("2. Create a new client and choose \"Confidential\" as the client type. Copy the Client ID and Client Secret into the fields below.");
+        ImGui.TextWrapped("2. Create a new client and choose \"Confidential\" as the client type. For the application name and redirect/callback URL, you can enter anything (e.g. \"Application  Name\" and https://google.com).");
+        ImGui.TextWrapped("3. Copy the Client ID and Client Secret into the fields below.");
         ImGui.Spacing();
         ImGui.SetNextItemWidth(-1);
         if (ImGui.InputTextWithHint("Client ID", "paste from FFLogs", ref _clientIdInput, 64))
