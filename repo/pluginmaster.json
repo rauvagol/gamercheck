@@ -11,9 +11,9 @@
     "DalamudApiLevel": 10,
     "IconUrl": "",
     "ImageUrls": [],
-    "DownloadLinkInstall": "https://github.com/rauvagol/gamercheck/releases/download/v0.0.0.1/gamercheck.zip",
-    "DownloadLinkUpdate": "https://github.com/rauvagol/gamercheck/releases/download/v0.0.0.1/gamercheck.zip",
-    "DownloadLinkTesting": "https://github.com/rauvagol/gamercheck/releases/download/v0.0.0.1/gamercheck.zip",
+    "DownloadLinkInstall": "https://github.com/rauvagol/gamercheck/releases/latest/download/gamercheck.zip",
+    "DownloadLinkUpdate": "https://github.com/rauvagol/gamercheck/releases/latest/download/gamercheck.zip",
+    "DownloadLinkTesting": "https://github.com/rauvagol/gamercheck/releases/latest/download/gamercheck.zip",
     "IsHide": false,
     "IsTestingExclusive": false,
     "LastUpdate": "1739817600"

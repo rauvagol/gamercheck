@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
@@ -16,20 +17,12 @@ public class ConfigWindow : Window, IDisposable
     {
         Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse;
-        Size = new Vector2(420, 220);
+        Size = new Vector2(460, 300);
         SizeCondition = ImGuiCond.Always;
         _configuration = plugin.Configuration;
     }
 
     public void Dispose() { }
-
-    public override void PreDraw()
-    {
-        if (_configuration.IsConfigWindowMovable)
-            Flags &= ~ImGuiWindowFlags.NoMove;
-        else
-            Flags |= ImGuiWindowFlags.NoMove;
-    }
 
     public override void Draw()
     {
@@ -47,28 +40,43 @@ public class ConfigWindow : Window, IDisposable
             _configuration.Save();
         }
 
-        var movable = _configuration.IsConfigWindowMovable;
-        if (ImGui.Checkbox("Movable settings window", ref movable))
-        {
-            _configuration.IsConfigWindowMovable = movable;
-            _configuration.Save();
-        }
-
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Text("FFLogs API (for parse data)");
+        ImGui.TextWrapped("To show in-game parses, create a Confidential client at FFLogs and paste its Client ID and Secret below.");
+        ImGui.Spacing();
+        const string fflogsClientsUrl = "https://www.fflogs.com/api/clients/";
+        ImGui.Text("1. Open ");
+        ImGui.SameLine();
+        ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.4f, 0.6f, 1f, 1f));
+        ImGui.Text("FFLogs API clients");
+        if (ImGui.IsItemClicked())
+            OpenUrl(fflogsClientsUrl);
+        ImGui.PopStyleColor();
+        ImGui.SameLine();
+        ImGui.Text(" (click to open).");
+        ImGui.TextWrapped("2. Create a new client and choose \"Confidential\" as the client type. Copy the Client ID and Client Secret into the fields below.");
+        ImGui.Spacing();
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.InputTextWithHint("Client ID", "a118cb39-...", ref _clientIdInput, 64))
+        if (ImGui.InputTextWithHint("Client ID", "paste from FFLogs", ref _clientIdInput, 64))
         {
             _configuration.FflogsClientId = _clientIdInput?.Trim() ?? "";
             _configuration.Save();
         }
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.InputTextWithHint("Client Secret (Confidential client)", "optional", ref _clientSecretInput, 128, ImGuiInputTextFlags.Password))
+        if (ImGui.InputTextWithHint("Client Secret", "paste from FFLogs", ref _clientSecretInput, 128, ImGuiInputTextFlags.Password))
         {
             _configuration.FflogsClientSecret = _clientSecretInput ?? "";
             _configuration.Save();
         }
-        ImGui.TextWrapped("Parse data uses the public API with Client Credentials. If your app is Public (PKCE only), create a Confidential client at FFLogs and paste its Client ID and Secret here.");
+    }
+
+    private static void OpenUrl(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+        }
+        catch { /* ignore */ }
     }
 }

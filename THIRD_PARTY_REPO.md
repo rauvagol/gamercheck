@@ -56,7 +56,11 @@ The “custom repo” users add is **a URL to a JSON file** that lists your plug
 - Create a small repo that only holds `pluginmaster.json` (and optionally an icon).
 - Use that repo’s raw URL as the custom repo URL.
 
-When you release a new version, update `pluginmaster.json`: bump `AssemblyVersion` and `LastUpdate`, and set `DownloadLinkInstall` / `DownloadLinkUpdate` (and optionally `DownloadLinkTesting`) to the new release zip URL.
+When you release a new version, update `pluginmaster.json`: bump `AssemblyVersion` and `LastUpdate`. If you use the **latest** URL (see below), you do **not** need to change the download links each time.
+
+**Using "latest" (recommended):** Set all download links once to:
+`https://github.com/rauvagol/gamercheck/releases/latest/download/gamercheck.zip`
+Then for each release: create a new GitHub Release, attach a zip named **exactly** `gamercheck.zip`. GitHub will serve that file from whatever release is "latest." You only update pluginmaster to bump `AssemblyVersion` and `LastUpdate` so the installer shows an update; the URLs stay the same.
 
 ---
 
