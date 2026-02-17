@@ -1,6 +1,10 @@
 # GamerCheck
 
-A Dalamud plugin that opens a window with FFLogs character URLs for your party. Use when someone joins or right‑click a party member and select GamerCheck.
+A Dalamud plugin that opens a window with FFLogs information for each party member, and a comparison to minimum dps for their role, and expected dps for their class.
+
+The requirements are an average amount, so if some party members are over the minimum, that adds leeway for the others.
+
+Note that minimums assume no use of dps limit break, which can account for over 3.5k dps, lowering the requirements by more than 800 per person.
 
 ## Installation (custom plugin repo)
 
