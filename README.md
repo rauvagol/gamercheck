@@ -4,7 +4,7 @@ A Dalamud plugin that opens a window with FFLogs information for each party memb
 
 The requirements are an average amount, so if some party members are over the minimum, that adds leeway for the others.
 
-Note that minimums assume no use of dps limit break, which can account for over 3.5k dps, lowering the requirements by more than 800 per person.
+Note that minimums assume no use of dps limit break, which can account for over 3.5k dps, lowering the requirements by ~500 per person.
 
 ## Installation (custom plugin repo)
 
