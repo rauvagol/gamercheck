@@ -87,12 +87,13 @@ public sealed class FFLogsApiService
             return FFLogsRankingsResult.Fail("Could not get API token. Check Client ID and Secret.");
 
         // zoneRankings is type JSON - no sub-selection allowed. We get raw JSON and parse it.
+        // difficulty 101 = Savage, 100 = Normal; same zone has both, so we filter to Savage only.
         var query = """
-            query characterData($name: String!, $serverSlug: String!, $serverRegion: String!, $zoneId: Int!) {
+            query characterData($name: String!, $serverSlug: String!, $serverRegion: String!, $zoneId: Int!, $difficulty: Int!) {
               characterData {
                 character(name: $name, serverSlug: $serverSlug, serverRegion: $serverRegion) {
                   hidden
-                  zoneRankings(zoneID: $zoneId)
+                  zoneRankings(zoneID: $zoneId, difficulty: $difficulty)
                 }
               }
             }
@@ -102,7 +103,8 @@ public sealed class FFLogsApiService
             ["name"] = characterName,
             ["serverSlug"] = serverSlug,
             ["serverRegion"] = serverRegion,
-            ["zoneId"] = 73
+            ["zoneId"] = 73,
+            ["difficulty"] = 101
         };
         var body = new { query, variables };
         var json = JsonSerializer.Serialize(body);

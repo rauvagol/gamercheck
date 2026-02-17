@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Threading.Tasks;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
@@ -36,6 +37,15 @@ public class MainWindow : Window, IDisposable
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
         _plugin = plugin;
+        TitleBarButtons =
+        [
+            new Window.TitleBarButton
+            {
+                Icon = FontAwesomeIcon.Cog,
+                Click = _ => _plugin.ToggleConfigUi(),
+                ShowTooltip = () => ImGui.SetTooltip("Open settings")
+            }
+        ];
     }
 
     public void Dispose() { }
@@ -74,10 +84,6 @@ public class MainWindow : Window, IDisposable
             }
             ImGui.EndTabBar();
         }
-
-        ImGui.Spacing();
-        if (ImGui.Button("Open settings"))
-            _plugin.ToggleConfigUi();
     }
 
     private void DrawPartyAuditTab()
@@ -150,15 +156,6 @@ public class MainWindow : Window, IDisposable
         {
             if (!child.Success) return;
 
-            ImGui.Text(partyList.Length > 0 ? "FFLogs character URLs for your party:" : "FFLogs character URL (solo / testing):");
-            if (hasApi)
-            {
-                ImGui.SameLine();
-                if (ImGui.SmallButton("Refresh parses"))
-                    _refreshRequested = true;
-            }
-            ImGui.Spacing();
-
             for (var i = 0; i < entries.Count; i++)
             {
                 var (name, worldRowId, currentClass) = entries[i];
@@ -210,6 +207,28 @@ public class MainWindow : Window, IDisposable
 
                 ImGui.Spacing();
             }
+
+            if (hasApi)
+            {
+                var btnSize = new Vector2(ImGui.GetFrameHeight(), ImGui.GetFrameHeight());
+                var contentMin = ImGui.GetWindowContentRegionMin();
+                var contentMax = ImGui.GetWindowContentRegionMax();
+                ImGui.SetCursorPos(new Vector2(contentMax.X - btnSize.X, contentMin.Y));
+                if (ImGui.Button("##RefreshParses", btnSize))
+                    _refreshRequested = true;
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip("Refresh parses");
+                var rectMin = ImGui.GetItemRectMin();
+                var rectSize = ImGui.GetItemRectSize();
+                var iconStr = FontAwesomeIcon.Sync.ToIconString();
+                using (_plugin.PushIconFont())
+                {
+                    var iconSize = ImGui.CalcTextSize(iconStr);
+                    var offset = new Vector2((rectSize.X - iconSize.X) * 0.5f, (rectSize.Y - iconSize.Y) * 0.5f);
+                    ImGui.SetCursorScreenPos(rectMin + offset);
+                    ImGui.Text(iconStr);
+                }
+            }
         }
     }
 
@@ -237,11 +256,13 @@ public class MainWindow : Window, IDisposable
             ImGui.TextColored(new Vector4(0.6f, 0.6f, 0.6f, 1f), "  Logs hidden");
             return;
         }
-        if (!ImGui.BeginTable($"##parses_{tableId}", 6, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) return;
+        if (!ImGui.BeginTable($"##parses_{tableId}", 8, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg)) return;
         ImGui.TableSetupColumn("Boss", ImGuiTableColumnFlags.WidthStretch);
         ImGui.TableSetupColumn("Current class", ImGuiTableColumnFlags.WidthFixed, 90f);
         ImGui.TableSetupColumn("Logged class", ImGuiTableColumnFlags.WidthFixed, 90f);
         ImGui.TableSetupColumn("rDPS", ImGuiTableColumnFlags.WidthFixed, 70f);
+        ImGui.TableSetupColumn("Delta (true min)", ImGuiTableColumnFlags.WidthFixed, 120f);
+        ImGui.TableSetupColumn("True min", ImGuiTableColumnFlags.WidthFixed, 75f);
         ImGui.TableSetupColumn("Delta", ImGuiTableColumnFlags.WidthFixed, 100f);
         ImGui.TableSetupColumn("Expected rDPS", ImGuiTableColumnFlags.WidthFixed, 95f);
         ImGui.TableHeadersRow();
@@ -261,12 +282,7 @@ public class MainWindow : Window, IDisposable
                 ImGui.Text(currentClassDisplay);
                 ImGui.TableSetColumnIndex(2);
                 ImGui.Text("—");
-                ImGui.TableSetColumnIndex(3);
-                ImGui.Text("—");
-                ImGui.TableSetColumnIndex(4);
-                ImGui.Text("—");
-                ImGui.TableSetColumnIndex(5);
-                ImGui.Text("—");
+                for (var c = 3; c < 8; c++) { ImGui.TableSetColumnIndex(c); ImGui.Text("—"); }
                 continue;
             }
 
@@ -275,6 +291,18 @@ public class MainWindow : Window, IDisposable
             long? expectedDps = null;
             if (bossKey.HasValue && className != null)
                 expectedDps = GetExpectedDpsForBossAndClass(bossKey.Value.BossId, className);
+            // True min = realistic role min (worst or second-worst by role) scaled with realistic worst comp baseline
+            double? trueMinDps = null;
+            if (bossKey.HasValue && className != null && ThresholdDataByBoss.TryGetValue(bossKey.Value.BossId, out var thresholdData) && thresholdData.BaselineTotalDps > 0 && bossKey.Value.Duration > 0)
+            {
+                var roleMin = GetRealisticRoleMinDps(bossKey.Value.BossId, className);
+                if (roleMin.HasValue)
+                {
+                    var dpsCheck = (double)bossKey.Value.Health / bossKey.Value.Duration;
+                    var scale = dpsCheck / thresholdData.BaselineTotalDps;
+                    trueMinDps = Math.Round(roleMin.Value * scale, 0);
+                }
+            }
             var loggedClassDisplay = SpecToDisplayName(p.Spec);
             var classMismatch = currentClassDisplay != "—" && !string.Equals(currentClassDisplay, loggedClassDisplay, StringComparison.OrdinalIgnoreCase);
             var warningYellow = new Vector4(0.85f, 0.85f, 0.25f, 1f);
@@ -290,18 +318,36 @@ public class MainWindow : Window, IDisposable
             else
                 ImGui.Text(loggedClassDisplay);
             ImGui.TableSetColumnIndex(3);
-            if (expectedDps.HasValue)
+            if (trueMinDps.HasValue)
             {
-                var expected = expectedDps.Value;
-                var withinTolerance = expected > 0 && p.Rdps >= expected * 0.985 && p.Rdps < expected;
-                Vector4 color = p.Rdps >= expected ? new Vector4(0.35f, 0.75f, 0.35f, 1f)
+                var minVal = trueMinDps.Value;
+                var withinTolerance = minVal > 0 && p.Rdps >= minVal * 0.985 && p.Rdps < minVal;
+                Vector4 color = p.Rdps >= minVal ? new Vector4(0.35f, 0.75f, 0.35f, 1f)
                     : withinTolerance ? warningYellow
                     : new Vector4(0.9f, 0.35f, 0.35f, 1f);
                 ImGui.TextColored(color, $"{p.Rdps:N0}");
             }
             else
                 ImGui.Text($"{p.Rdps:N0}");
+
             ImGui.TableSetColumnIndex(4);
+            if (trueMinDps.HasValue)
+            {
+                var deltaTrue = p.Rdps - trueMinDps.Value;
+                var pctTrue = trueMinDps.Value != 0 ? (deltaTrue * 100.0 / trueMinDps.Value) : 0.0;
+                var withinToleranceTrue = deltaTrue < 0 && pctTrue >= -1.5;
+                Vector4 colorTrue = deltaTrue >= 0 ? new Vector4(0.35f, 0.75f, 0.35f, 1f)
+                    : withinToleranceTrue ? warningYellow
+                    : new Vector4(0.9f, 0.35f, 0.35f, 1f);
+                ImGui.TextColored(colorTrue, $"{(deltaTrue >= 0 ? "+" : "")}{deltaTrue:N0} ({pctTrue:+0.0;-0.0}%)");
+            }
+            else
+                ImGui.Text("—");
+
+            ImGui.TableSetColumnIndex(5);
+            ImGui.Text(trueMinDps.HasValue ? $"{trueMinDps.Value:N0}" : "—");
+
+            ImGui.TableSetColumnIndex(6);
             if (expectedDps.HasValue)
             {
                 var delta = p.Rdps - expectedDps.Value;
@@ -314,7 +360,7 @@ public class MainWindow : Window, IDisposable
             }
             else
                 ImGui.Text("—");
-            ImGui.TableSetColumnIndex(5);
+            ImGui.TableSetColumnIndex(7);
             ImGui.Text(expectedDps.HasValue ? $"{expectedDps.Value:N0}" : "—");
         }
         ImGui.EndTable();
@@ -481,8 +527,6 @@ public class MainWindow : Window, IDisposable
         public double NormalizedScore(double classDps) => BaselineTotalDps > 0 ? classDps * 8.0 / BaselineTotalDps * 100.0 : 0;
     }
 
-    private static string Fflogs50thUrl(int bossId) => $"https://www.fflogs.com/zone/statistics/73?boss={bossId}&dataset=50";
-
     /// <summary>Title-case for display (e.g. "RED MAGE" -> "Red Mage").</summary>
     private static string ToDisplayCapitalization(string s)
     {
@@ -616,6 +660,39 @@ public class MainWindow : Window, IDisposable
         return (long)Math.Round(avgPerSlot * (score / 100.0));
     }
 
+    /// <summary>Role floor DPS for this boss: the lowest 50th % DPS among jobs in the same role as className.</summary>
+    private static double? GetRoleFloorDps(int bossId, string? className)
+    {
+        if (string.IsNullOrWhiteSpace(className)) return null;
+        if (!ThresholdDataByBoss.TryGetValue(bossId, out var data) || data.ClassDps == null) return null;
+        var role = GetRoleForClass(className.Trim());
+        if (role == "?") return null;
+        double min = double.MaxValue;
+        foreach (var (name, dps) in data.ClassDps)
+            if (GetRoleForClass(name) == role) min = Math.Min(min, dps);
+        return min == double.MaxValue ? null : (double?)min;
+    }
+
+    /// <summary>Unscaled "min bar" DPS for true min column: uses realistic worst comp logic. Caster/Phys Ranged = worst in role. Tank/Healer/Melee = worst if this class is worst, else second-worst.</summary>
+    private static double? GetRealisticRoleMinDps(int bossId, string? className)
+    {
+        if (string.IsNullOrWhiteSpace(className)) return null;
+        if (!ThresholdDataByBoss.TryGetValue(bossId, out var data) || data.ClassDps == null) return null;
+        var role = GetRoleForClass(className.Trim());
+        if (role == "?") return null;
+        var inRole = new List<(string Name, double Dps)>();
+        foreach (var (name, dps) in data.ClassDps)
+            if (GetRoleForClass(name) == role) inRole.Add((name, dps));
+        if (inRole.Count == 0) return null;
+        inRole.Sort((a, b) => a.Dps.CompareTo(b.Dps));
+        var worst = inRole[0];
+        if (role == "Caster" || role == "Phys Ranged")
+            return worst.Dps;
+        if (string.Equals(className.Trim(), worst.Name, StringComparison.OrdinalIgnoreCase))
+            return worst.Dps;
+        return inRole.Count >= 2 ? inRole[1].Dps : (double?)worst.Dps;
+    }
+
     private void DrawBossThresholdTab(string name, long health, int bossId, int durationSeconds)
     {
         using (var child = ImRaii.Child($"##{name}", new Vector2(-1, -1), true, ImGuiWindowFlags.None))
@@ -625,25 +702,12 @@ public class MainWindow : Window, IDisposable
             double totalDps = durationSeconds > 0 ? (double)health / durationSeconds : 0;
             int min = durationSeconds / 60, sec = durationSeconds % 60;
 
-            // Boss info header: name, health, duration, total DPS, 50th % link
-            ImGui.Text(name);
-            ImGui.SameLine(0, 12);
+            // Boss info header: health, duration, total DPS
             ImGui.Text($"Health: {health:N0}");
             ImGui.SameLine(0, 12);
             ImGui.Text($"Duration: {min}m {sec}s");
             ImGui.SameLine(0, 12);
             ImGui.Text($"Total DPS needed: {totalDps:N0}");
-            ImGui.SameLine(0, 12);
-            var url = Fflogs50thUrl(bossId);
-            if (ImGui.Button("Open 50th % stats"))
-            {
-                try
-                {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = url, UseShellExecute = true });
-                }
-                catch { }
-            }
-            ImGui.TextColored(new Vector4(0.5f, 0.5f, 0.5f, 1f), "FFLogs zone 73, dataset 50.");
 
             ImGui.Spacing();
             ImGui.Separator();
@@ -756,7 +820,7 @@ public class MainWindow : Window, IDisposable
     {
         private static readonly string[] NaWorlds =
         {
-            "adamantoise", "cactuar", "faerie", "gilgamesh", "midgardsormr", "sargatanas", "siren",
+            "adamantoise", "cactuar", "faerie", "gilgamesh", "jenova", "midgardsormr", "sargatanas", "siren",
             "balmung", "brynhildr", "coeurl", "diabolos", "goblin", "malboro", "mateus", "zalera",
             "halicarnassus", "maduin", "marilith", "seraph"
         };

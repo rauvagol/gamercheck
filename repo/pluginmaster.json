@@ -2,20 +2,20 @@
   {
     "Author": "rauvagol",
     "Name": "GamerCheck",
-    "Punchline": "View FFLogs links for your party.",
-    "Description": "Opens a window with FFLogs character URLs for all party members. Use when someone joins your party or right-click a party member and select GamerCheck.",
     "InternalName": "GamerCheck",
+    "Punchline": "View FFLogs links and parse checks for your party.",
+    "Description": "Opens a window with FFLogs character URLs for all party members, and checks Savage parse data (rDPS, true min, expected) per fight. Use when someone joins your party or right-click a party member and select GamerCheck. Commands: /gamercheck or /gc.",
     "AssemblyVersion": "0.0.0.1",
     "RepoUrl": "https://github.com/rauvagol/gamercheck",
     "ApplicableVersion": "any",
-    "Tags": ["party", "fflogs", "parse"],
-    "DalamudApiLevel": 14,
+    "DalamudApiLevel": 10,
+    "IconUrl": "",
+    "ImageUrls": [],
     "DownloadLinkInstall": "https://github.com/rauvagol/gamercheck/releases/download/v0.0.0.1/gamercheck.zip",
     "DownloadLinkUpdate": "https://github.com/rauvagol/gamercheck/releases/download/v0.0.0.1/gamercheck.zip",
     "DownloadLinkTesting": "https://github.com/rauvagol/gamercheck/releases/download/v0.0.0.1/gamercheck.zip",
     "IsHide": false,
     "IsTestingExclusive": false,
-    "DownloadCount": 0,
-    "LastUpdate": "0"
+    "LastUpdate": "1739817600"
   }
 ]

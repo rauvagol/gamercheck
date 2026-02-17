@@ -1,3 +1,4 @@
+using System;
 using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -21,6 +22,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
 
     private const string CommandName = "/gamercheck";
+    private const string CommandNameShort = "/gc";
 
     public Configuration Configuration { get; init; }
 
@@ -43,6 +45,10 @@ public sealed class Plugin : IDalamudPlugin
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
             HelpMessage = "Open GamerCheck window with FFLogs links for your party"
+        });
+        CommandManager.AddHandler(CommandNameShort, new CommandInfo(OnCommand)
+        {
+            HelpMessage = "Open GamerCheck window"
         });
 
         // Open window when someone joins the party
@@ -71,6 +77,7 @@ public sealed class Plugin : IDalamudPlugin
         ConfigWindow.Dispose();
         MainWindow.Dispose();
         CommandManager.RemoveHandler(CommandName);
+        CommandManager.RemoveHandler(CommandNameShort);
     }
 
     private void OnFrameworkUpdate(IFramework framework)
@@ -119,4 +126,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public void ToggleConfigUi() => ConfigWindow.Toggle();
     public void ToggleMainUi() => MainWindow.Toggle();
+
+    /// <summary>Push the icon font for drawing FontAwesome icons. Dispose the return value to pop.</summary>
+    public IDisposable PushIconFont() => PluginInterface.UiBuilder.IconFontHandle.Push();
 }
