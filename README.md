@@ -1,36 +1,48 @@
-> ⚠️ **Don't click Fork!**
-> 
-> This is a GitHub Template repo. If you want to use this for a plugin, [use this template][new-repo] to make a new repo!
->
-> ![image](https://github.com/goatcorp/SamplePlugin/assets/16760685/d9732094-e1ed-4769-a70b-58ed2b92580c)
+# GamerCheck
 
-# SamplePlugin
+A Dalamud plugin that opens a window with FFLogs character URLs for your party. Use when someone joins or right‑click a party member and select GamerCheck.
 
-[![Use This Template badge](https://img.shields.io/badge/Use%20This%20Template-0?logo=github&labelColor=grey)][new-repo]
+## Installation (custom plugin repo)
 
+This plugin is distributed via a **custom plugin repository** (not the official Dalamud repo). Users can install it as follows:
 
-Simple example plugin for Dalamud.
+1. Open **XIVLauncher** → Plugin Settings (`/xlplugins` in-game or from the launcher).
+2. Go to **Settings** → **Experimental** → **Custom Plugin Repositories**.
+3. Add this URL (replace `USER` with the repo owner if different):
+   ```
+   https://raw.githubusercontent.com/USER/gamercheck/main/pluginmaster.json
+   ```
+   If your default branch is `master`, use:
+   ```
+   https://raw.githubusercontent.com/USER/gamercheck/master/pluginmaster.json
+   ```
+4. Save and refresh the plugin list. **GamerCheck** should appear; install and enable it.
+
+## Releasing a new version
+
+1. Update `Version` in `GamerCheck/GamerCheck.csproj` (e.g. `0.0.0.2`).
+2. Update `GamerCheck/GamerCheck.json` (author, `RepoUrl`, `Changelog`) and replace any `USER` with your GitHub username/org.
+3. Create a **GitHub Release** (tag e.g. `v0.0.0.2`). The **Release to custom plugin repo** workflow will:
+   - Build the plugin and create `plugins/GamerCheck/latest.zip`
+   - Regenerate `pluginmaster.json` from that zip
+   - Commit and push those files to this repo
+   - Attach the zip to the release
+4. Users who added the custom repo will see the update in the Plugin Installer.
+
+You can also run the workflow manually: **Actions** → **Release to custom plugin repo** → **Run workflow**.
+
+---
+
+*Based on the SamplePlugin template.* Simple example plugin for Dalamud.
 
 This is not designed to be the simplest possible example, but it is also not designed to cover everything you might want to do. For more detailed questions, come ask in [the Discord](https://discord.gg/holdshift).
 
-## Main Points
+## Features
 
-* Simple functional plugin
-  * Slash command
-  * Main UI
-  * Settings UI
-  * Image loading
-  * Plugin json
-* Simple, slightly-improved plugin configuration handling
-* Project organization
-  * Copies all necessary plugin files to the output directory
-    * Does not copy dependencies that are provided by dalamud
-    * Output directory can be zipped directly and have exactly what is required
-  * Hides data files from visual studio to reduce clutter
-    * Also allows having data files in different paths than VS would usually allow if done in the IDE directly
-
-
-The intention is less that any of this is used directly in other projects, and more to show how similar things can be done.
+* **Slash command:** `/gamercheck` opens the main window.
+* **Main UI:** FFLogs links for each party member.
+* **Settings:** e.g. open window when a party member joins.
+* **Context menu:** Right‑click a party member → GamerCheck.
 
 ## How To Use
 
@@ -55,17 +67,17 @@ SamplePlugin assumes all the following prerequisites are met:
 
 ### Building
 
-1. Open up `SamplePlugin.sln` in your C# editor of choice (likely [Visual Studio 2022](https://visualstudio.microsoft.com) or [JetBrains Rider](https://www.jetbrains.com/rider/)).
+1. Open up `GamerCheck.sln` in your C# editor of choice (likely [Visual Studio 2022](https://visualstudio.microsoft.com) or [JetBrains Rider](https://www.jetbrains.com/rider/)).
 2. Build the solution. By default, this will build a `Debug` build, but you can switch to `Release` in your IDE.
-3. The resulting plugin can be found at `SamplePlugin/bin/x64/Debug/SamplePlugin.dll` (or `Release` if appropriate.)
+3. The resulting plugin can be found at `GamerCheck/bin/x64/Debug/GamerCheck.dll` (or `Release` if appropriate.)
 
 ### Activating in-game
 
 1. Launch the game and use `/xlsettings` in chat or `xlsettings` in the Dalamud Console to open up the Dalamud settings.
-    * In here, go to `Experimental`, and add the full path to the `SamplePlugin.dll` to the list of Dev Plugin Locations.
+    * In here, go to `Experimental`, and add the full path to the `GamerCheck.dll` to the list of Dev Plugin Locations.
 2. Next, use `/xlplugins` (chat) or `xlplugins` (console) to open up the Plugin Installer.
-    * In here, go to `Dev Tools > Installed Dev Plugins`, and the `SamplePlugin` should be visible. Enable it.
-3. You should now be able to use `/pmycommand` (chat) or `pmycommand` (console)!
+    * In here, go to `Dev Tools > Installed Dev Plugins`, and **GamerCheck** should be visible. Enable it.
+3. You should now be able to use `/gamercheck` to open the window.
 
 Note that you only need to add it to the Dev Plugin Locations once (Step 1); it is preserved afterwards. You can disable, enable, or load your plugin on startup through the Plugin Installer.
 

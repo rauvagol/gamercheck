@@ -1,0 +1,21 @@
+[
+  {
+    "Author": "your name here",
+    "Name": "GamerCheck",
+    "Punchline": "View FFLogs links for your party.",
+    "Description": "Opens a window with FFLogs character URLs for all party members. Use when someone joins your party or right-click a party member and select GamerCheck.",
+    "InternalName": "GamerCheck",
+    "AssemblyVersion": "0.0.0.1",
+    "RepoUrl": "https://github.com/USER/gamercheck",
+    "ApplicableVersion": "any",
+    "Tags": ["party", "fflogs", "parse"],
+    "DalamudApiLevel": 14,
+    "DownloadLinkInstall": "https://github.com/USER/gamercheck/raw/main/plugins/GamerCheck/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/USER/gamercheck/raw/main/plugins/GamerCheck/latest.zip",
+    "DownloadLinkTesting": "https://github.com/USER/gamercheck/raw/main/plugins/GamerCheck/latest.zip",
+    "IsHide": false,
+    "IsTestingExclusive": false,
+    "DownloadCount": 0,
+    "LastUpdate": "0"
+  }
+]

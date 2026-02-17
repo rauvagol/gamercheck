@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Dalamud.NET.Sdk/14.0.1">
+  <PropertyGroup>
+    <Version>0.0.0.1</Version>
+    <PackageProjectUrl>https://github.com/USER/gamercheck</PackageProjectUrl>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- FFXIVClientStructs from Dalamud dev folder (same as TomestoneViewer approach for cross-world party) -->
+    <Reference Include="FFXIVClientStructs" Condition="Exists('$(USERPROFILE)\AppData\Roaming\XIVLauncher\addon\Hooks\dev\FFXIVClientStructs.dll')">
+      <HintPath>$(USERPROFILE)\AppData\Roaming\XIVLauncher\addon\Hooks\dev\FFXIVClientStructs.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,84 @@
+# On release: build plugin, zip it, update plugins/ and pluginmaster.json, push.
+# Users add this repo as a custom plugin repo in XIVLauncher to install GamerCheck.
+
+name: Release to custom plugin repo
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: windows-2022
+    permissions:
+      contents: write  # create release assets
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Download Dalamud
+        run: |
+          Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/latest.zip -OutFile latest.zip
+          New-Item -ItemType Directory -Force -Path "$env:AppData\XIVLauncher\addon\Hooks\dev" | Out-Null
+          Expand-Archive -Force latest.zip "$env:AppData\XIVLauncher\addon\Hooks\dev"
+
+      - name: Build
+        run: dotnet build GamerCheck.sln -c Release
+
+      - name: Get version
+        id: version
+        run: |
+          $m = Select-String -Path GamerCheck\GamerCheck.csproj -Pattern '<Version>(.*?)</Version>'
+          $ver = $m.Matches.Groups[1].Value
+          echo "version=$ver" >> $env:GITHUB_OUTPUT
+
+      - name: Patch manifest with version and API level
+        run: |
+          $jsonPath = "GamerCheck\bin\x64\Release\GamerCheck\GamerCheck.json"
+          $j = Get-Content $jsonPath -Raw | ConvertFrom-Json
+          $j | Add-Member -NotePropertyName AssemblyVersion -NotePropertyValue "${{ steps.version.outputs.version }}" -Force
+          $j | Add-Member -NotePropertyName DalamudApiLevel -NotePropertyValue 14 -Force
+          $j | ConvertTo-Json -Depth 10 | Set-Content $jsonPath
+        if: success()
+
+      - name: Create plugin zip
+        run: |
+          $out = "GamerCheck\bin\x64\Release\GamerCheck"
+          Compress-Archive -Path "$out\*" -DestinationPath "plugins\GamerCheck\latest.zip" -Force
+
+      - name: Generate pluginmaster.json
+        run: |
+          python generate_pluginmaster.py
+        env:
+          GITHUB_REF: refs/heads/${{ github.event.repository.default_branch }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+
+      - name: Commit and push plugin repo updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add plugins/GamerCheck/latest.zip pluginmaster.json
+          git diff --staged --quiet || (git commit -m "Release: update GamerCheck plugin [skip ci]" && git push)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release asset
+        if: github.event_name == 'release'
+        run: gh release upload "${{ github.event.release.tag_name }}" plugins/GamerCheck/latest.zip --clobber --repo "${{ github.repository }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
